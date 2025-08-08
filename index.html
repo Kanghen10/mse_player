@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MSE Player Fullscreen</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: black;
+      height: 100%;
+      overflow: hidden;
+    }
+    video-stream {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      object-fit: contain;
+      background: black;
+    }
+</style>
+</head>
+<body>
+<script type="module">
+(async () => {
+    // Import JS lokal
+    await import("./js/video-stream.js");
+    await import("./js/video-rtc.js");
+
+    const hash = decodeURIComponent(location.hash.substring(1));
+    if (!hash) {
+        document.body.innerHTML = "<h2 style='color:white;text-align:center;margin-top:20%'>Masukkan URL stream di hash (#)</h2>";
+        return;
+    }
+
+    let streams = [];
+    let modes = [];
+
+    // Jika linknya berbentuk stream.html?src=...&mode=...
+    if (hash.includes("stream.html")) {
+        const params = new URL(hash).searchParams;
+        streams = params.getAll("src");
+        modes = params.getAll("mode");
+        if (modes.length === 0) modes.push("");
+        while (modes.length > streams.length) streams.push(streams[0]);
+        while (streams.length > modes.length) modes.push(modes[0]);
+    } else {
+        // Jika langsung WSS
+        streams = [hash];
+        modes = [""];
+    }
+
+    // Buat video-stream untuk tiap src
+    for (let i = 0; i < streams.length; i++) {
+        const video = document.createElement("video-stream");
+        video.background = true;
+        video.mode = modes[i] || "";
+        if (hash.startsWith("wss://")) {
+            video.src = streams[i];
+        } else {
+            video.src = new URL("api/ws?src=" + encodeURIComponent(streams[i]), hash).toString();
+        }
+        document.body.appendChild(video);
+
+        // Auto play dan auto fullscreen
+        setTimeout(() => {
+            if (video.play) video.play().catch(() => {});
+            if (document.fullscreenEnabled) {
+                video.requestFullscreen().catch(() => {});
+            }
+        }, 500);
+    }
+})();
+</script>
+</body>
+</html>
