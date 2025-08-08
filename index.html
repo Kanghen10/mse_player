@@ -26,8 +26,8 @@
 (function() {
   let hash = location.hash ? decodeURIComponent(location.hash.substring(1)) : "";
   let finalSrc = "";
+  let finalMode = "mse"; // pastikan selalu MSE
 
-  // Jika hash adalah URL stream.html → konversi ke wss://
   if (hash.startsWith("http") && hash.includes("stream.html")) {
     try {
       let urlObj = new URL(hash);
@@ -37,9 +37,7 @@
     } catch (e) {
       console.error("Gagal parse URL stream.html:", e);
     }
-  } 
-  // Jika hash langsung wss:// atau ws:// → gunakan langsung
-  else if (hash.startsWith("wss://") || hash.startsWith("ws://")) {
+  } else if (hash.startsWith("wss://") || hash.startsWith("ws://")) {
     finalSrc = hash;
   }
 
@@ -50,7 +48,7 @@
 
   const video = document.createElement("video-stream");
   video.background = true;
-  video.mode = "mse";
+  video.mode = finalMode;
   video.autoplay = true;
   video.src = finalSrc;
 
