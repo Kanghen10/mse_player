@@ -9,13 +9,14 @@
       margin: 0;
       padding: 0;
       background: black;
-      height: 100%;
-      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     video-stream {
-      display: block;
-      width: 100vw;
-      height: 100vh;
+      max-width: 100%;
+      max-height: 100%;
       object-fit: contain;
       background: black;
     }
@@ -24,20 +25,18 @@
 <body>
 <script type="module">
 (async () => {
-    // Import JS lokal
     await import("./js/video-stream.js");
     await import("./js/video-rtc.js");
 
     const hash = decodeURIComponent(location.hash.substring(1));
     if (!hash) {
-        document.body.innerHTML = "<h2 style='color:white;text-align:center;margin-top:20%'>Masukkan URL stream di hash (#)</h2>";
+        document.body.innerHTML = "<h2 style='color:white;text-align:center'>Masukkan URL stream di hash (#)</h2>";
         return;
     }
 
     let streams = [];
     let modes = [];
 
-    // Jika linknya berbentuk stream.html?src=...&mode=...
     if (hash.includes("stream.html")) {
         const params = new URL(hash).searchParams;
         streams = params.getAll("src");
@@ -45,25 +44,21 @@
         if (modes.length === 0) modes.push("");
         while (modes.length > streams.length) streams.push(streams[0]);
         while (streams.length > modes.length) modes.push(modes[0]);
+    } else if (hash.startsWith("wss://")) {
+        streams = [hash];
+        modes = ["mse"]; // FIX untuk WSS langsung
     } else {
-        // Jika langsung WSS
         streams = [hash];
         modes = [""];
     }
 
-    // Buat video-stream untuk tiap src
     for (let i = 0; i < streams.length; i++) {
         const video = document.createElement("video-stream");
         video.background = true;
         video.mode = modes[i] || "";
-        if (hash.startsWith("wss://")) {
-            video.src = streams[i];
-        } else {
-            video.src = new URL("api/ws?src=" + encodeURIComponent(streams[i]), hash).toString();
-        }
+        video.src = streams[i];
         document.body.appendChild(video);
 
-        // Auto play dan auto fullscreen
         setTimeout(() => {
             if (video.play) video.play().catch(() => {});
             if (document.fullscreenEnabled) {
